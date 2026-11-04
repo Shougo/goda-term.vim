@@ -37,5 +37,8 @@ nnoremap [Space]t <Cmd>call goda_term#start(#{
       \ })<CR>
 ```
 
+The sources `term_tab` and `term_shell_history` of
+[goda-fi.vim](https://github.com/Shougo/goda-fi.vim) are in `ext/fi`.
+
 See `:help goda-term` for everything else, and `:help goda-term-ddt` for
 the differences from ddt.vim.

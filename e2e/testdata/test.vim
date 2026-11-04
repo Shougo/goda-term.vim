@@ -211,6 +211,21 @@ function! s:shell() abort
   wincmd n
   call goda_term#start(#{name: 'sh', ui: 'shell'})
   call s:check('shell again', bufnr('%'), s:buf)
+
+  " The Vim script of the goda-fi sources.
+  if !has('win32')
+    call goda_term#fi#_command_line('send', 'echo fromfi', v:false)
+    call s:wait('index(getline(1, "$"), "fromfi") >= 0 && getline("$") ==# "% "')
+  endif
+  let cwd = t:goda_term_ui_last_directory
+  tabnew
+  let tabs = goda_term#fi#_tabs()
+  call s:check('tabs', [len(tabs), tabs[0].word, tabs[0].tabNr, tabs[1].word =~# '^\[no goda-term\] '],
+        \ [2, cwd, 1, 1])
+  call goda_term#fi#_tab_switch(1)
+  call s:check('tab switch', [tabpagenr(), g:goda_term_ui_last_winid], [1, win_getid()])
+  call goda_term#fi#_tab_delete([2, 1])
+  call s:check('tab delete', tabpagenr('$'), 1)
 endfunction
 
 " The highlights of the line {lnum}: [[col, length, group]].

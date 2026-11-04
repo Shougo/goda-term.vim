@@ -13,6 +13,7 @@ Functions		|goda-term-functions|
 Variables		|goda-term-variables|
 UI shell		|goda-term-ui-shell|
 UI terminal		|goda-term-ui-terminal|
+Goda-fi sources		|goda-term-goda-fi|
 Differences from ddt	|goda-term-ddt|
 
 ==============================================================================
@@ -309,6 +310,71 @@ send		{str}: typed in the job, and executed.
 setCommandLine	{str}: typed in the job.
 
 ==============================================================================
+GODA-FI SOURCES                                             *goda-term-goda-fi*
+
+The packages .../ext/fi/termtab and .../ext/fi/shellhistory are sources of
+goda-fi.vim (https://github.com/Shougo/goda-fi.vim), as the ddu sources of
+ddt.vim; add them in the configuration of goda-fi.vim:
+>go
+	import (
+		"github.com/Shougo/goda-term.vim/ext/fi/shellhistory"
+		"github.com/Shougo/goda-term.vim/ext/fi/termtab"
+	)
+
+	b.AddSource(termtab.NewSource())
+	b.AddKind(termtab.NewKind())
+	b.AddSource(shellhistory.New(shellhistory.Params{
+		Paths: []string{"~/.cache/ddt-shell-history"},
+	}))
+	b.PatchGlobal(fi.Options{
+		KindOptions: map[string]fi.KindOptions{
+			"term_tab": {DefaultAction: "switch"},
+		},
+		SourceOptions: map[string]fi.SourceOptions{
+			"term_shell_history": {DefaultAction: "execute"},
+		},
+	})
+<
+term_tab                                         *goda-term-goda-fi-term_tab*
+		The tab pages, with the directory of their last UI
+		(|t:goda_term_ui_last_directory|).  The kind term_tab has the
+		actions:
+
+		delete	Close the tab pages.
+		edit	Change the directory of the tab page and of its UI.
+		new	A new tab page, in a directory asked for.
+		switch	Go to the tab page.
+
+term_shell_history                     *goda-term-goda-fi-term_shell_history*
+		The command lines of history files, the newest first.  The
+		actions are for the session of the current buffer:
+
+		edit	Edit the command line, and execute it.
+		execute	Execute it.
+		insert	Insert it.
+
+		params:
+		limit	(number)
+			How many command lines of each file.
+			Default: 500
+		paths	(string[])
+			The history files (expanded; those that are not
+			there are skipped).  zsh's extended history too.
+
+For example:
+>vim
+	nnoremap <C-t> <Cmd>call goda_fi#start(#{
+	      \   name: 'term', sync: v:true,
+	      \   sources: ['term_tab'],
+	      \ })<CR>
+	" In the buffer of a UI.
+	nnoremap <buffer> <C-h> <Cmd>call goda_fi#start(#{
+	      \   name: 'term', sync: v:true,
+	      \   input: goda_term#ui#get_input(),
+	      \   sources: ['term_shell_history'],
+	      \ })<CR>
+<
+==============================================================================
 DIFFERENCES FROM DDT                                            *goda-term-ddt*
 
 - The configuration is Go (main.go), not ddt.ts: ddt#custom#load_config()
@@ -321,6 +387,8 @@ DIFFERENCES FROM DDT                                            *goda-term-ddt*
 - The UI shell keeps the blank lines of the output, and the messages are
   "goda-term: exit 1", ...
 - setCommandLine only: no setPrompt.
+- The ddu sources ddt_tab and ddt_shell_history are the goda-fi sources
+  term_tab and term_shell_history (|goda-term-goda-fi|).
 
 ==============================================================================
 vim:tw=78:ts=8:noet:ft=help:norl:
