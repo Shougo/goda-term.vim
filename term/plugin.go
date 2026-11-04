@@ -187,7 +187,7 @@ func (p *Plugin) start(ctx context.Context, h sdk.Host, params []any) (any, erro
 	var user optionMap
 	var c Context
 	var pt patches
-	if err := decodeParams(params, &user, &c, &pt); err != nil {
+	if err := sdk.DecodeArgs(params, &user, sdk.Optional(&c), sdk.Optional(&pt)); err != nil {
 		return nil, err
 	}
 	o, err := p.resolve(user, pt)
@@ -240,7 +240,7 @@ func (p *Plugin) session(name string) (*session, Args, error) {
 func (p *Plugin) uiAction(ctx context.Context, h sdk.Host, params []any) (any, error) {
 	var name, action string
 	var ap Params
-	if err := decodeParams(params, &name, &action, &ap); err != nil {
+	if err := sdk.DecodeArgs(params, &name, &action, sdk.Optional(&ap)); err != nil {
 		return nil, err
 	}
 	s, args, err := p.session(name)
@@ -273,7 +273,7 @@ func (p *Plugin) uiAction(ctx context.Context, h sdk.Host, params []any) (any, e
 // getInput(name) is the command line of the session.
 func (p *Plugin) getInput(ctx context.Context, h sdk.Host, params []any) (any, error) {
 	var name string
-	if err := decodeParams(params, &name); err != nil {
+	if err := sdk.DecodeArgs(params, &name); err != nil {
 		return nil, err
 	}
 	s, args, err := p.session(name)
@@ -302,7 +302,7 @@ func (p *Plugin) sessionNames(context.Context, sdk.Host, []any) (any, error) {
 func (p *Plugin) options(_ context.Context, _ sdk.Host, params []any) (any, error) {
 	var name string
 	var pt patches
-	if err := decodeParams(params, &name, &pt); err != nil {
+	if err := sdk.DecodeArgs(params, &name, sdk.Optional(&pt)); err != nil {
 		return nil, err
 	}
 	if _, args, err := p.session(name); err == nil {
@@ -313,18 +313,4 @@ func (p *Plugin) options(_ context.Context, _ sdk.Host, params []any) (any, erro
 		return nil, err
 	}
 	return toMap(o)
-}
-
-// decodeParams decodes the params given into dsts, in order; those not
-// given stay as they are.
-func decodeParams(params []any, dsts ...any) error {
-	for i, d := range dsts {
-		if i >= len(params) || params[i] == nil {
-			continue
-		}
-		if err := sdk.Decode(params[i], d); err != nil {
-			return fmt.Errorf("goda-term: param %d: %w", i+1, err)
-		}
-	}
-	return nil
 }
