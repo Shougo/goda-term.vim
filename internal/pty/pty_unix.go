@@ -5,29 +5,33 @@ package pty
 import (
 	"errors"
 	"os"
+	"os/exec"
 	"syscall"
 	"time"
 	"unsafe"
 )
 
-func start(p *Pty, o Options) error {
+func start(p *Pty, path string, o Options) error {
 	master, slave, err := open()
 	if err != nil {
 		return err
 	}
 	ws := struct{ row, col, x, y uint16 }{uint16(o.Rows), uint16(o.Cols), 0, 0}
 	_ = ioctl(slave.Fd(), syscall.TIOCSWINSZ, uintptr(unsafe.Pointer(&ws)))
-	p.cmd.Stdin, p.cmd.Stdout, p.cmd.Stderr = slave, slave, slave
+	cmd := exec.Command(path, o.Args...)
+	cmd.Env, cmd.Dir = o.Env, o.Dir
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
 	// Its own session, the terminal as its controlling terminal (fd 0).
-	p.cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
-	if err := p.cmd.Start(); err != nil {
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
+	if err := cmd.Start(); err != nil {
 		master.Close()
 		slave.Close()
 		return err
 	}
 	// The command has it now.
 	slave.Close()
-	p.r, p.w = master, master
+	p.proc, p.wait = cmd.Process, waitCmd(cmd)
+	p.r, p.w, p.terminal = master, master, true
 	return nil
 }
 
@@ -43,10 +47,7 @@ func closeTTY(*Pty) {}
 // hangup: SIGHUP to the session of the command (as when its terminal is
 // gone), and SIGKILL after a moment.
 func hangup(p *Pty) {
-	if p.cmd.Process == nil {
-		return
-	}
-	pid := p.cmd.Process.Pid
+	pid := p.proc.Pid
 	_ = syscall.Kill(-pid, syscall.SIGHUP)
 	select {
 	case <-p.done:
@@ -56,12 +57,7 @@ func hangup(p *Pty) {
 }
 
 // Interrupt sends SIGINT to the command (as <C-c> in its terminal).
-func (p *Pty) Interrupt() error {
-	if p.cmd.Process == nil {
-		return nil
-	}
-	return syscall.Kill(-p.cmd.Process.Pid, syscall.SIGINT)
-}
+func (p *Pty) Interrupt() error { return syscall.Kill(-p.proc.Pid, syscall.SIGINT) }
 
 // Resize sets the size of the terminal.
 func (p *Pty) Resize(rows, cols int) error {

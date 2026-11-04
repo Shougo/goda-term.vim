@@ -152,7 +152,11 @@ function! s:shell() abort
   call s:check('shell prompt', getline(1, '$'), ['| user', '% '])
   call s:check('shell variables', [b:goda_term_name, t:goda_term_ui_shell_last_name], ['sh', 'sh'])
 
-  if !has('win32')
+  if has('win32')
+    " A command in ConPTY, and its output.
+    call goda_term#ui#do_action('send', #{str: 'cmd /c echo hello'})
+    call s:wait('index(getline(1, "$"), "hello") >= 0 && getline("$") ==# "% "')
+  else
     call goda_term#ui#do_action('send', #{str: 'echo hello'})
     call s:wait('getline("$") ==# "% " && index(getline(1, "$"), "hello") >= 0')
     call s:check('history', readfile(history), ['echo hello'])

@@ -156,8 +156,9 @@ g:goda_term_ui_last_winid                         *g:goda_term_ui_last_winid*
 UI SHELL                                                   *goda-term-ui-shell*
 
 A buffer with a prompt: each command line runs in a pseudo terminal of its
-own (pipes on MS-Windows: no colors, and no terminal for a command that asks
-for one), and its output, with its ANSI colors, is written in the buffer.
+own (ConPTY on MS-Windows 10 1809 and later; pipes on an older one: no
+colors, and no terminal for a command that asks for one), and its output,
+with its ANSI colors, is written in the buffer.
 Its 'filetype' is "goda-term-shell".
 
 The command line is not given to a shell: it is words with quotes and
