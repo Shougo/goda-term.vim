@@ -1,0 +1,212 @@
+*goda_term.txt*	Terminals and shells on goda.vim
+
+Author: Shougo <Shougo.Matsu at gmail.com>
+License: MIT license
+
+CONTENTS                                                   *goda-term-contents*
+
+Introduction		|goda-term-introduction|
+Install			|goda-term-install|
+Configuration		|goda-term-configuration|
+Options			|goda-term-options|
+Functions		|goda-term-functions|
+Variables		|goda-term-variables|
+UI terminal		|goda-term-ui-terminal|
+Differences from ddt	|goda-term-ddt|
+
+==============================================================================
+INTRODUCTION                                           *goda-term-introduction*
+
+goda-term.vim is the successor of ddt.vim on goda.vim: the UIs are Go, in a
+binary built from your configuration (main.go), and Vim talks to it through
+goda.vim.  There is no Deno.
+
+==============================================================================
+INSTALL                                                     *goda-term-install*
+
+It needs Vim 9.1 or Neovim 0.10, Go 1.26 and goda.vim:
+
+https://github.com/Shougo/goda.vim
+
+==============================================================================
+CONFIGURATION                                         *goda-term-configuration*
+
+The configuration is a Go module in |g:goda_term#config_dir|: a main.go that
+adds the UIs and patches the options (examples/config has one):
+>go
+	b := term.New()
+	b.AddUI(terminal.New())
+	b.PatchGlobal(term.Options{
+		UIParams: map[string]term.Params{
+			"terminal": {"command": []string{"zsh"}},
+		},
+	})
+	b.Main()
+<
+Build it with |goda_term#build()|.
+
+g:goda_term#config_dir                                 *g:goda_term#config_dir*
+		The configuration module.
+		Default: "~/.vim/goda-term", Neovim: stdpath('config') .
+		'/goda-term'
+
+g:goda_term#binary                                         *g:goda_term#binary*
+		The binary built from it.
+		Default: "goda-term" in the "goda-term" directory of the cache
+		directory (Neovim: stdpath('cache'); Vim: $XDG_CACHE_HOME/vim
+		or ~/.cache/vim, %LOCALAPPDATA%/vim on MS-Windows).
+
+==============================================================================
+OPTIONS                                                     *goda-term-options*
+
+Those of main.go (term.Options; Builder.PatchGlobal() and PatchLocal()),
+of |goda_term#custom#patch_global()| and |goda_term#custom#patch_local()|,
+and of |goda_term#start()|, merged in that order.  The params of a UI are
+merged param by param.
+
+name			(string)
+		The session: a start with the name of a session shows it
+		again.
+		Default: "default"
+
+ui			(string)
+		The UI: "terminal", ...
+
+uiParams		(dict)
+		The params of each UI, by its name.
+
+nvimServer		(string)
+		Not used yet (as in ddt.vim).
+
+==============================================================================
+FUNCTIONS                                                 *goda-term-functions*
+
+goda_term#build()                                           *goda_term#build()*
+		Build the configuration: "go mod tidy" and "go build".  The
+		binary runs from the next request.
+
+goda_term#start([{options}])                                *goda_term#start()*
+		Show the session of {options}: a new one, or the one of the
+		name again.
+
+goda_term#ui_action({name}, {action} [, {params}])      *goda_term#ui_action()*
+		Run the UI action {action} of the session {name}.
+
+goda_term#get_input({name})                             *goda_term#get_input()*
+		The command line being typed in the session {name}.
+
+goda_term#sessions()                                     *goda_term#sessions()*
+		The names of the sessions.
+
+goda_term#ui#do_action({action} [, {params} [, {name}]])
+                                                     *goda_term#ui#do_action()*
+		|goda_term#ui_action()| of the session of the current buffer
+		(or {name}).
+
+goda_term#ui#get_input([{name}])                     *goda_term#ui#get_input()*
+		|goda_term#get_input()| of the session of the current buffer.
+
+goda_term#ui#kill_editor()                         *goda_term#ui#kill_editor()*
+		Delete the current buffer forcibly, close the current tab, and
+		go back to the window of the last UI: for the editor that
+		$EDITOR started in a session ("git commit", say).
+		NOTE: Unsaved changes in the buffer are lost.
+
+goda_term#custom#patch_global({dict})        *goda_term#custom#patch_global()*
+goda_term#custom#patch_global({key}, {value})
+goda_term#custom#patch_local({name}, {dict})  *goda_term#custom#patch_local()*
+goda_term#custom#patch_local({name}, {key}, {value})
+goda_term#custom#set_global({dict})            *goda_term#custom#set_global()*
+goda_term#custom#set_local({name}, {dict})      *goda_term#custom#set_local()*
+		Patch (or set) the options at run time.
+
+goda_term#custom#get_global()                  *goda_term#custom#get_global()*
+goda_term#custom#get_local()                    *goda_term#custom#get_local()*
+		Those patches.
+
+goda_term#custom#get_current([{name}])        *goda_term#custom#get_current()*
+		The options of the session {name} (default: that of the
+		current buffer).
+
+==============================================================================
+VARIABLES                                                 *goda-term-variables*
+
+b:goda_term_name                                             *b:goda_term_name*
+		The session of the buffer of a UI.
+
+t:goda_term_name                                             *t:goda_term_name*
+		The last session shown in the tab page.
+
+t:goda_term_ui_{ui}_last_name                   *t:goda_term_ui_{ui}_last_name*
+		The last session of the UI {ui} ("terminal", ...) shown in
+		the tab page.
+
+t:goda_term_ui_last_bufnr                         *t:goda_term_ui_last_bufnr*
+		The buffer of the last UI shown in the tab page.
+
+t:goda_term_ui_last_directory                 *t:goda_term_ui_last_directory*
+		The directory of the last UI shown in the tab page.
+
+g:goda_term_ui_last_winid                         *g:goda_term_ui_last_winid*
+		The window of the last UI shown or acted on.
+
+==============================================================================
+UI TERMINAL                                             *goda-term-ui-terminal*
+
+A terminal job of Vim or Neovim.  Its buffer has the 'filetype'
+"goda-term-terminal".
+
+PARAMS                                           *goda-term-ui-terminal-params*
+
+command			(string[])
+		The job.  Required.
+
+cwd			(string)
+		Its directory.
+		Default: the current directory
+
+extraTermOptions	(dict)
+		More options of |term_start()| (Vim) or |jobstart()| (Neovim).
+
+floatingBorder		(string | list)
+		The border of a floating window (Neovim).
+
+promptPattern		(string)
+		The prompt of the job, a regexp: executeLine, nextPrompt,
+		pastePrompt, previousPrompt and the input need it.
+
+split			(string)
+		"" (the current window), "horizontal", "vertical", "farleft",
+		"farright" or "floating" (Neovim).
+
+startInsert		(boolean)
+		Enter Terminal-Job mode (Neovim; Vim always does).
+
+winCol, winHeight, winRow, winWidth	(number)
+		The size and the place of the window (50, 15, 20, 80).
+
+ACTIONS                                         *goda-term-ui-terminal-actions*
+
+cd		{directory}: the job goes there.
+executeLine	The command line of the cursor, executed again.
+insert		{str}: typed in the job.
+nextPrompt	The cursor goes to the next prompt.
+pastePrompt	The command line of the cursor, typed in the job.
+previousPrompt	The cursor goes to the previous prompt.
+redraw		Redraw the terminal.
+send		{str}: typed in the job, and executed.
+setCommandLine	{str}: typed in the job.
+
+==============================================================================
+DIFFERENCES FROM DDT                                            *goda-term-ddt*
+
+- The configuration is Go (main.go), not ddt.ts: ddt#custom#load_config()
+  is |goda_term#build()|.
+- ddt#... is goda_term#... (ddt#start() is |goda_term#start()|, ...).
+- The variables are b:goda_term_name, t:goda_term_ui_..._last_name, ...
+  (|goda-term-variables|), and the 'filetype' of the UI terminal is
+  "goda-term-terminal".
+- setCommandLine only: no setPrompt.
+
+==============================================================================
+vim:tw=78:ts=8:noet:ft=help:norl:
