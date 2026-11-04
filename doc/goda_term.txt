@@ -386,6 +386,9 @@ DIFFERENCES FROM DDT                                            *goda-term-ddt*
   b:goda_term_ui_shell_prompt).
 - The UI shell keeps the blank lines of the output, and the messages are
   "goda-term: exit 1", ...
+- In the UI shell, the colors of the output (fgs, bgs) are over its
+  attributes (bold, ...): a group of bold with a color of its own ("Bold"
+  of a color scheme) does not replace the color.
 - setCommandLine only: no setPrompt.
 - The ddu sources ddt_tab and ddt_shell_history are the goda-fi sources
   term_tab and term_shell_history (|goda-term-goda-fi|).

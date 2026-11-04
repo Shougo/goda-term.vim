@@ -137,7 +137,7 @@ function! s:shell() abort
   let dir = resolve(fnamemodify(tempname(), ':p'))
   call mkdir(dir, 'p')
   highlight TestRed ctermfg=1 guifg=Red
-  highlight TestBold cterm=bold gui=bold
+  highlight TestBold cterm=bold gui=bold ctermfg=2 guifg=Green
   call goda_term#custom#patch_local('sh', #{uiParams: #{shell: #{
         \ shellHistoryPath: history,
         \ aliases: #{greet: 'echo aliased'},
@@ -158,10 +158,12 @@ function! s:shell() abort
     call s:check('history', readfile(history), ['echo hello'])
 
     " The colors of the output.
-    call goda_term#ui#do_action('send', #{str: "printf '\033[31mred\033[0m \033[1mbold\033[0m\n'"})
-    call s:wait('index(getline(1, "$"), "red bold") >= 0 && getline("$") ==# "% "')
-    let lnum = index(getline(1, '$'), 'red bold') + 1
-    call s:check('colors', s:highlights(lnum), [[1, 3, 'TestRed'], [5, 4, 'TestBold']])
+    " (The color is over bold, whose group has a color too.)
+    call goda_term#ui#do_action('send', #{str: "printf '\033[31mred\033[0m \033[1mbold\033[0m \033[1;31mboth\033[0m\n'"})
+    call s:wait('index(getline(1, "$"), "red bold both") >= 0 && getline("$") ==# "% "')
+    let lnum = index(getline(1, '$'), 'red bold both') + 1
+    call s:check('colors', sort(s:highlights(lnum), {a, b -> a[0] != b[0] ? a[0] - b[0] : a[2] ># b[2] ? 1 : -1}),
+          \ [[1, 3, 'TestRed', 30], [5, 4, 'TestBold', 10], [10, 4, 'TestBold', 10], [10, 4, 'TestRed', 30]])
 
     " An alias, an error, and one that is not there.
     call goda_term#ui#do_action('send', #{str: 'greet'})
@@ -233,9 +235,10 @@ function! s:highlights(lnum) abort
   if has('nvim')
     let ns = nvim_get_namespaces()['goda-term-ui-shell']
     return map(nvim_buf_get_extmarks(0, ns, [a:lnum - 1, 0], [a:lnum - 1, -1], #{details: v:true}),
-          \ {_, m -> [m[2] + 1, m[3].end_col - m[2], m[3].hl_group]})
+          \ {_, m -> [m[2] + 1, m[3].end_col - m[2], m[3].hl_group, m[3].priority]})
   endif
-  return map(prop_list(a:lnum), {_, p -> [p.col, p.length, prop_type_get(p.type, #{bufnr: bufnr('%')}).highlight]})
+  return map(prop_list(a:lnum), {_, p -> [p.col, p.length]
+        \ + map(['highlight', 'priority'], {_, k -> prop_type_get(p.type, #{bufnr: bufnr('%')})[k]})})
 endfunction
 
 try

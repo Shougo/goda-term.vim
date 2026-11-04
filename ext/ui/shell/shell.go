@@ -573,23 +573,25 @@ loop:
 }
 
 // group is the highlight of a span: the group, the name of its text
-// property, and its priority.
+// property, and its priority. The colors are over the attributes: the
+// group of bold (often with colors of its own, "Bold") adds bold to the
+// color, it does not replace it.
 func (c ANSIColorHighlights) group(s span) (string, string, int) {
 	switch s.attr {
 	case "fg":
 		if s.color < len(c.Fgs) {
-			return c.Fgs[s.color], fmt.Sprintf("ANSIColorFG%d", s.color), 10
+			return c.Fgs[s.color], fmt.Sprintf("ANSIColorFG%d", s.color), 30
 		}
 	case "bg":
 		if s.color < len(c.Bgs) {
-			return c.Bgs[s.color], fmt.Sprintf("ANSIColorBG%d", s.color), 5
+			return c.Bgs[s.color], fmt.Sprintf("ANSIColorBG%d", s.color), 20
 		}
 	case "bold":
-		return c.Bold, "ANSIColorBold", 100
+		return c.Bold, "ANSIColorBold", 10
 	case "italic":
-		return c.Italic, "ANSIColorItalic", 100
+		return c.Italic, "ANSIColorItalic", 10
 	case "underline":
-		return c.Underline, "ANSIColorUnderline", 100
+		return c.Underline, "ANSIColorUnderline", 10
 	}
 	return "", "", 0
 }

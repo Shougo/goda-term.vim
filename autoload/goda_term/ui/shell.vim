@@ -109,6 +109,9 @@ function! goda_term#ui#shell#_move_cursor_last(bufnr) abort
     return
   endif
   call win_execute(winid, 'call cursor(line("$"), col([line("$"), "$"]) + 1)')
+  " Scrolled to the side for a long command line: back, when the prompt
+  " fits.
+  call win_execute(winid, 'if virtcol(".") < winwidth(0) | call winrestview(#{leftcol: 0}) | endif')
 endfunction
 
 " The command line of the cursor: its line without the prompt ({prompt},
