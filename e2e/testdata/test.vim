@@ -80,33 +80,39 @@ function! s:terminal() abort
   call s:check('variables', [b:goda_term_name, t:goda_term_ui_terminal_last_name,
         \ t:goda_term_ui_last_bufnr], ['term', 'term', s:buf])
   call s:check('sessions', goda_term#sessions(), ['term'])
-  call s:wait('!empty(s:lines(' . string('^' . prompt) . '))')
+  " The job of a terminal of the headless Neovim of MS-Windows exits at
+  " once, without a word (jobwait() says -3): that of Neovim is tested on
+  " the other systems.
+  if !(has('nvim') && has('win32'))
+    call s:wait('!empty(s:lines(' . string('^' . prompt) . '))')
 
-  call goda_term#ui#do_action('send', #{str: 'echo hello'})
-  call s:wait('len(s:lines(''^hello$'')) == 1')
+    call goda_term#ui#do_action('send', #{str: 'echo hello'})
+    call s:wait('len(s:lines(''^hello$'')) == 1')
 
-  " cd: the job is there.
-  let dir = resolve(fnamemodify(tempname(), ':p'))
-  call mkdir(dir, 'p')
-  call goda_term#ui#do_action('cd', #{directory: dir})
-  call s:check('last directory', t:goda_term_ui_last_directory, dir)
-  call goda_term#ui#do_action('send', #{str: has('win32') ? 'cd' : 'pwd'})
-  call s:wait('!empty(s:lines(''^' . escape(dir, '\.~[]*') . '$''))')
+    " cd: the job is there.
+    let dir = resolve(fnamemodify(tempname(), ':p'))
+    call mkdir(dir, 'p')
+    call goda_term#ui#do_action('cd', #{directory: dir})
+    call s:check('last directory', t:goda_term_ui_last_directory, dir)
+    call goda_term#ui#do_action('send', #{str: has('win32') ? 'cd' : 'pwd'})
+    call s:wait('!empty(s:lines(''^' . escape(dir, '\.~[]*') . '$''))')
 
-  " The prompts: before the cursor, and after it.
-  if !has('win32')
-    call s:refresh()
-    call cursor(search('^hello$', 'w'), 1)
-    call goda_term#ui#do_action('previousPrompt')
-    call s:check('previousPrompt', [getline('.'), col('.')], ['% echo hello', 3])
-    call goda_term#ui#do_action('nextPrompt')
-    call s:check('nextPrompt', getline('.') =~# '^% cd ', v:true)
-    call goda_term#ui#do_action('previousPrompt')
-    call cursor(0, col('$') - 1)
-    call s:check('get_input', goda_term#ui#get_input(), 'echo hello')
-    " executeLine: that of the cursor again.
-    call goda_term#ui#do_action('executeLine')
-    call s:wait('len(s:lines(''^hello$'')) >= 2')
+    " The prompts: before the cursor, and after it.
+    if !has('win32')
+      call s:refresh()
+      call cursor(search('^hello$', 'w'), 1)
+      call goda_term#ui#do_action('previousPrompt')
+      call s:check('previousPrompt', [getline('.'), col('.')], ['% echo hello', 3])
+      call goda_term#ui#do_action('nextPrompt')
+      call s:check('nextPrompt', getline('.') =~# '^% cd ', v:true)
+      call goda_term#ui#do_action('previousPrompt')
+      call cursor(0, col('$') - 1)
+      call s:check('get_input', goda_term#ui#get_input(), 'echo hello')
+      " executeLine: that of the cursor again.
+      call goda_term#ui#do_action('executeLine')
+      call s:wait('len(s:lines(''^hello$'')) >= 2')
+    endif
+
   endif
 
   " Shown again from another window: the same buffer and job.
