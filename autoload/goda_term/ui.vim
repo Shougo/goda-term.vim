@@ -94,11 +94,6 @@ function! goda_term#ui#_init_variables(name, ui, bufnr, cwd) abort
   let g:goda_term_ui_last_winid = win_getid()
 endfunction
 
-" After a start: $EDITOR for the jobs of the sessions.
-function! goda_term#ui#_started(nvim_server) abort
-  call s:set_editor(a:nvim_server)
-  redraw
-endfunction
 
 " After a UI action.
 function! goda_term#ui#_acted() abort
@@ -106,7 +101,9 @@ function! goda_term#ui#_acted() abort
   redraw
 endfunction
 
-function! s:set_editor(nvim_server) abort
+" Before a start: $EDITOR (and $GIT_EDITOR) for the jobs of the sessions,
+" to edit in this Vim.
+function! goda_term#ui#_set_editor(nvim_server) abort
   let editor = ''
   if exists('g:loaded_guise')
     " vim-guise sets $EDITOR itself.

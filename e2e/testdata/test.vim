@@ -11,6 +11,8 @@ let s:result = $GODA_TERM_RESULT
 execute 'set runtimepath^=' . fnameescape($GODA_VIM_DIR)
 execute 'set runtimepath^=' . fnameescape($GODA_TERM_DIR)
 let g:goda_term#binary = $GODA_TERM_BINARY
+" goda-term sets it.
+let $EDITOR = ''
 
 function! s:check(name, got, want) abort
   if a:got !=# a:want
@@ -111,6 +113,12 @@ function! s:terminal() abort
       " executeLine: that of the cursor again.
       call goda_term#ui#do_action('executeLine')
       call s:wait('len(s:lines(''^hello$'')) >= 2')
+      " The job has $EDITOR (for "git commit"): it is set before it starts.
+      if !has('win32')
+        call s:check('$EDITOR', $EDITOR !=# '', v:true)
+        call goda_term#ui#do_action('send', #{str: 'echo "editor=$EDITOR"'})
+        call s:wait('len(s:lines(' . string('^editor=' . escape($EDITOR, '\.~[]*') . '$') . ')) == 1')
+      endif
     endif
 
   endif
