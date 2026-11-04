@@ -1,40 +1,9 @@
 " The Vim script of the UI "terminal": a terminal job of Vim or Neovim.
 
-" Open the window of {params} (split, ...).
-function! goda_term#ui#terminal#_split(params) abort
-  if a:params.split ==# ''
-    return
-  endif
-  if a:params.split ==# 'floating' && exists('*nvim_open_win')
-    call nvim_open_win(bufnr('%'), v:true, #{
-          \   relative: 'editor',
-          \   row: a:params.winRow,
-          \   col: a:params.winCol,
-          \   width: a:params.winWidth,
-          \   height: a:params.winHeight,
-          \   border: a:params.floatingBorder ==# '' ? 'none' : a:params.floatingBorder,
-          \ })
-  elseif a:params.split ==# 'vertical'
-    vsplit
-    execute 'vertical resize' a:params.winWidth
-  elseif a:params.split ==# 'farleft'
-    vsplit
-    wincmd H
-    execute 'vertical resize' a:params.winWidth
-  elseif a:params.split ==# 'farright'
-    vsplit
-    wincmd L
-    execute 'vertical resize' a:params.winWidth
-  else
-    split
-    execute 'resize' a:params.winHeight
-  endif
-endfunction
-
 " Start the job of {params} in a new buffer of the current window: {bufnr,
 " jobid, pid}.
 function! goda_term#ui#terminal#_new(params, cwd) abort
-  call goda_term#ui#terminal#_split(a:params)
+  call goda_term#ui#_split(a:params)
   let opts = extend(deepcopy(a:params.extraTermOptions), #{cwd: a:cwd})
   if has('nvim')
     " :terminal would replace the current buffer.
@@ -63,7 +32,7 @@ endfunction
 
 " Show the buffer {bufnr} of the session again.
 function! goda_term#ui#terminal#_switch(params, bufnr) abort
-  call goda_term#ui#terminal#_split(a:params)
+  call goda_term#ui#_split(a:params)
   execute 'buffer' a:bufnr
 endfunction
 
@@ -108,17 +77,6 @@ endfunction
 function! goda_term#ui#terminal#_input(pattern) abort
   let line = goda_term#ui#terminal#_command_line(a:pattern)
   return line[: col('.') - (mode() ==# 'n' ? 2 : 3)]
-endfunction
-
-" Move to the prompt before or after the cursor ({flags} of searchpos()).
-function! goda_term#ui#terminal#_search_prompt(pattern, flags) abort
-  call cursor(0, 1)
-  let pattern = '^\%(' . a:pattern . '\m\).\?'
-  let pos = searchpos(pattern, a:flags)
-  if pos[0] == 0
-    return
-  endif
-  call cursor(pos[0], matchend(getline(pos[0]), pattern))
 endfunction
 
 " Send {keys} to the job.

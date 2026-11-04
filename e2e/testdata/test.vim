@@ -3,6 +3,8 @@
 
 set nocompatible
 set encoding=utf-8
+set nomore
+syntax on
 let s:errors = []
 let s:result = $GODA_TERM_RESULT
 
@@ -23,13 +25,13 @@ function! s:wait(cond, bufnr = bufnr('%')) abort
     if eval(a:cond)
       return v:true
     endif
-    if has('nvim')
+    if has('nvim') || getbufvar(a:bufnr, '&buftype') !=# 'terminal'
       sleep 20m
     else
       call term_wait(a:bufnr, 20)
     endif
   endfor
-  call add(s:errors, 'timed out: ' . a:cond . ' ' . string(s:lines('')))
+  call add(s:errors, 'timed out: ' . a:cond . ' ' . string(getbufvar(a:bufnr, '&buftype') ==# 'terminal' ? s:lines('') : getbufline(a:bufnr, 1, '$')))
   return v:false
 endfunction
 
@@ -120,8 +122,101 @@ function! s:terminal() abort
   call s:check('get_current', goda_term#custom#get_current('term').ui, 'terminal')
 endfunction
 
+" The UI shell: its buffer with the prompts, and the output of the commands.
+function! s:shell() abort
+  let history = tempname()
+  let dir = resolve(fnamemodify(tempname(), ':p'))
+  call mkdir(dir, 'p')
+  highlight TestRed ctermfg=1 guifg=Red
+  highlight TestBold cterm=bold gui=bold
+  call goda_term#custom#patch_local('sh', #{uiParams: #{shell: #{
+        \ shellHistoryPath: history,
+        \ aliases: #{greet: 'echo aliased'},
+        \ ansiColorHighlights: #{fgs: repeat(['TestRed'], 16), bold: 'TestBold'},
+        \ userPrompt: '"| user"',
+        \ noSaveHistoryCommands: ['history'],
+        \ }}})
+  enew
+  call goda_term#start(#{name: 'sh', ui: 'shell'})
+  let s:buf = bufnr('%')
+  call s:check('shell filetype', &filetype, 'goda-term-shell')
+  call s:check('shell prompt', getline(1, '$'), ['| user', '% '])
+  call s:check('shell variables', [b:goda_term_name, t:goda_term_ui_shell_last_name], ['sh', 'sh'])
+
+  if !has('win32')
+    call goda_term#ui#do_action('send', #{str: 'echo hello'})
+    call s:wait('getline("$") ==# "% " && index(getline(1, "$"), "hello") >= 0')
+    call s:check('history', readfile(history), ['echo hello'])
+
+    " The colors of the output.
+    call goda_term#ui#do_action('send', #{str: "printf '\033[31mred\033[0m \033[1mbold\033[0m\n'"})
+    call s:wait('index(getline(1, "$"), "red bold") >= 0 && getline("$") ==# "% "')
+    let lnum = index(getline(1, '$'), 'red bold') + 1
+    call s:check('colors', s:highlights(lnum), [[1, 3, 'TestRed'], [5, 4, 'TestBold']])
+
+    " An alias, an error, and one that is not there.
+    call goda_term#ui#do_action('send', #{str: 'greet'})
+    call s:wait('index(getline(1, "$"), "aliased") >= 0 && getline("$") ==# "% "')
+    call goda_term#ui#do_action('send', #{str: 'false'})
+    call s:wait('index(getline(1, "$"), "goda-term: exit 1") >= 0 && getline("$") ==# "% "')
+    call s:errmsgs()
+    call goda_term#ui#do_action('send', #{str: 'no-such-command-x'})
+    call s:check('not executable', s:errmsgs() =~# 'not an executable', v:true)
+
+    " The builtin cd.
+    call goda_term#ui#do_action('send', #{str: 'cd ' . dir})
+    call s:check('cd', [getcwd(), t:goda_term_ui_last_directory], [dir, dir])
+    call goda_term#ui#do_action('send', #{str: 'pwd'})
+    call s:wait('index(getline(1, "$"), ' . string(dir) . ') >= 0 && getline("$") ==# "% "')
+
+    " The command line: set, executed, put aside.
+    call goda_term#ui#do_action('setCommandLine', #{str: 'echo again'})
+    call s:check('setCommandLine', getline('$'), '% echo again')
+    call cursor('$', 1)
+    call s:check('get_input', goda_term#ui#get_input(), '')
+    call goda_term#ui#do_action('executeLine')
+    call s:wait('index(getline(1, "$"), "again") >= 0 && getline("$") ==# "% "')
+    call goda_term#ui#do_action('setCommandLine', #{str: 'pushed'})
+    call goda_term#ui#do_action('pushBufferStack')
+    call s:check('pushBufferStack', getline('$'), '% ')
+    call goda_term#ui#do_action('send', #{str: 'echo x'})
+    call s:wait('getline("$") ==# "% pushed"')
+
+    " A command that goes on: terminated.
+    call goda_term#ui#do_action('send', #{str: 'sleep 30'})
+    sleep 200m
+    call goda_term#ui#do_action('terminate')
+    call s:wait('getline("$") ==# "% "')
+
+    " The builtins with and time.
+    call goda_term#ui#do_action('send', #{str: 'with echo'})
+    call s:check('with', getline('$'), '% echo ')
+    call goda_term#ui#do_action('send', #{str: 'with'})
+    call s:check('with ended', getline('$'), '% ')
+    call goda_term#ui#do_action('send', #{str: 'time echo t'})
+    call s:wait('match(getline(1, "$"), ''^goda-term: \d\+ ms$'') >= 0 && getline("$") ==# "% "')
+    call s:check('history of time', index(readfile(history), 'time echo t') >= 0, v:true)
+  endif
+
+  " Shown again: the same buffer.
+  wincmd n
+  call goda_term#start(#{name: 'sh', ui: 'shell'})
+  call s:check('shell again', bufnr('%'), s:buf)
+endfunction
+
+" The highlights of the line {lnum}: [[col, length, group]].
+function! s:highlights(lnum) abort
+  if has('nvim')
+    let ns = nvim_get_namespaces()['goda-term-ui-shell']
+    return map(nvim_buf_get_extmarks(0, ns, [a:lnum - 1, 0], [a:lnum - 1, -1], #{details: v:true}),
+          \ {_, m -> [m[2] + 1, m[3].end_col - m[2], m[3].hl_group]})
+  endif
+  return map(prop_list(a:lnum), {_, p -> [p.col, p.length, prop_type_get(p.type, #{bufnr: bufnr('%')}).highlight]})
+endfunction
+
 try
   call s:terminal()
+  call s:shell()
 catch
   call add(s:errors, v:throwpoint . ': ' . v:exception)
 endtry

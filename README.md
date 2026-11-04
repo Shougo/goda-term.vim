@@ -7,6 +7,9 @@ instead of TypeScript, and no Deno.
 
 The UIs:
 
+- `shell`: a buffer with a prompt; each command line runs in a pseudo
+  terminal, and its output (with its colors) is written in the buffer
+  (ddt-ui-shell).
 - `terminal`: a terminal job of Vim or Neovim (ddt-ui-terminal).
 
 ## Requirements

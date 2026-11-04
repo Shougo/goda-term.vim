@@ -11,6 +11,7 @@ Configuration		|goda-term-configuration|
 Options			|goda-term-options|
 Functions		|goda-term-functions|
 Variables		|goda-term-variables|
+UI shell		|goda-term-ui-shell|
 UI terminal		|goda-term-ui-terminal|
 Differences from ddt	|goda-term-ddt|
 
@@ -151,6 +152,116 @@ g:goda_term_ui_last_winid                         *g:goda_term_ui_last_winid*
 		The window of the last UI shown or acted on.
 
 ==============================================================================
+UI SHELL                                                   *goda-term-ui-shell*
+
+A buffer with a prompt: each command line runs in a pseudo terminal of its
+own (pipes on MS-Windows: no colors, and no terminal for a command that asks
+for one), and its output, with its ANSI colors, is written in the buffer.
+Its 'filetype' is "goda-term-shell".
+
+The command line is not given to a shell: it is words with quotes and
+backslashes, leading NAME=value assignments, $VAR and ${VAR}, ~ and globs;
+no pipes, no redirections.  A directory alone ("../", "./sub", "/tmp") is
+"cd" to it.  The builtins:
+
+cd [{dir}]	Change the directory ($HOME without one, "-" the previous one):
+		that of Vim too (|chdir()|, |DirChanged|).
+history		Print the history.
+time {command}	Run {command}, and print how long it took.
+vim {file}	Edit {file}.
+with [{word}...]
+		Start the next command lines with {word}s (none: no more).
+
+The output is that of a line printer: a line overwritten by "\r" and some
+escape sequences (a progress bar) is overwritten; the other escape sequences
+are dropped.  Full-screen programs are for |goda-term-ui-terminal|.
+
+PARAMS                                              *goda-term-ui-shell-params*
+
+aliases			(dict)
+		Replace the first word of a command line: {"ls": "ls --color"}.
+
+ansiColorHighlights	(dict)
+		The highlights of the output: "fgs" and "bgs" (16 highlight
+		groups of the ANSI colors), "bold", "italic", "underline".
+
+cwd			(string)
+		The directory.
+		Default: the current directory
+
+exprParams		(string[])
+		The params whose strings are Vim expressions (of uiParams, the
+		params as given).
+		Default: ["winCol", "winRow", "winHeight", "winWidth"]
+
+floatingBorder		(string | list)
+		The border of a floating window (Neovim).
+
+flushIntervalMs		(number)
+		How often the output is written.
+		Default: 100
+
+noSaveHistoryCommands	(string[])
+		Commands not written in the history.
+
+passwordPattern		(string)
+		When the output matches it (a Go regexp), a password is asked
+		(|inputsecret()|).
+
+prompt			(string)
+		Default: "%"
+
+promptHighlight		(string)
+		Default: "Identifier"
+
+promptPattern		(string)
+		The prompt, a Vim regexp.
+		Default: "% "
+
+shellHistoryMax		(number)
+		Default: 500
+
+shellHistoryPath	(string)
+		The history file.
+
+split			(string)
+		As |goda-term-ui-terminal-params|.
+
+startInsert		(boolean)
+		Start in Insert mode.
+
+userPrompt		(string)
+		A Vim expression shown above the prompt (lines by "\n").
+
+userPromptHighlight	(string)
+		Default: "Special"
+
+userPromptPattern	(string)
+		The lines of the user prompt, a Vim regexp.
+		Default: "| .*"
+
+winCol, winHeight, winRow, winWidth	(number | string)
+		The size and the place of the window: numbers or expressions
+		(|exprParams|).
+
+ACTIONS                                            *goda-term-ui-shell-actions*
+
+cd		{directory}: the shell goes there.
+executeLine	Execute the command line of the cursor (that of another
+		prompt: in a new prompt).  Typed in the command running, if
+		any.
+insert		{str}: typed in the command running, or in a new prompt.
+nextPrompt	The cursor goes to the next prompt.
+pastePrompt	The command line of the cursor, in a new prompt.
+previousPrompt	The cursor goes to the previous prompt.
+pushBufferStack	The command line is put aside: it comes back in the prompt
+		after the next command.
+redraw		Redraw the prompt.
+send		{str}: executed.
+setCommandLine	{str}: the command line of a new prompt.
+terminate	End the command running.
+
+==============================================================================
 UI TERMINAL                                             *goda-term-ui-terminal*
 
 A terminal job of Vim or Neovim.  Its buffer has the 'filetype'
@@ -204,8 +315,11 @@ DIFFERENCES FROM DDT                                            *goda-term-ddt*
   is |goda_term#build()|.
 - ddt#... is goda_term#... (ddt#start() is |goda_term#start()|, ...).
 - The variables are b:goda_term_name, t:goda_term_ui_..._last_name, ...
-  (|goda-term-variables|), and the 'filetype' of the UI terminal is
-  "goda-term-terminal".
+  (|goda-term-variables|), and the 'filetype' of the UIs are
+  "goda-term-shell" and "goda-term-terminal" (b:ddt_ui_shell_prompt is
+  b:goda_term_ui_shell_prompt).
+- The UI shell keeps the blank lines of the output, and the messages are
+  "goda-term: exit 1", ...
 - setCommandLine only: no setPrompt.
 
 ==============================================================================

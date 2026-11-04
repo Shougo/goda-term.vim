@@ -248,7 +248,7 @@ func (t *instance) Actions() map[string]term.Action {
 			if ok, err := t.current(ctx, h); err != nil || !ok || p.PromptPattern == "" {
 				return err
 			}
-			_, err := h.Call(ctx, "goda_term#ui#terminal#_search_prompt", p.PromptPattern, flags)
+			_, err := h.Call(ctx, "goda_term#ui#_search_prompt", p.PromptPattern, flags)
 			return err
 		})
 	}

@@ -41,6 +41,48 @@ function! goda_term#ui#buffer_delete(bufnr) abort
   endif
 endfunction
 
+" The window of a UI: {params} (split, winWidth, ...).
+function! goda_term#ui#_split(params) abort
+  if a:params.split ==# ''
+    return
+  endif
+  if a:params.split ==# 'floating' && exists('*nvim_open_win')
+    call nvim_open_win(bufnr('%'), v:true, #{
+          \   relative: 'editor',
+          \   row: a:params.winRow,
+          \   col: a:params.winCol,
+          \   width: a:params.winWidth,
+          \   height: a:params.winHeight,
+          \   border: a:params.floatingBorder ==# '' ? 'none' : a:params.floatingBorder,
+          \ })
+  elseif a:params.split ==# 'vertical'
+    vsplit
+    execute 'vertical resize' a:params.winWidth
+  elseif a:params.split ==# 'farleft'
+    vsplit
+    wincmd H
+    execute 'vertical resize' a:params.winWidth
+  elseif a:params.split ==# 'farright'
+    vsplit
+    wincmd L
+    execute 'vertical resize' a:params.winWidth
+  else
+    split
+    execute 'resize' a:params.winHeight
+  endif
+endfunction
+
+" Move to the prompt before or after the cursor ({flags} of searchpos()).
+function! goda_term#ui#_search_prompt(pattern, flags) abort
+  call cursor(0, 1)
+  let pattern = '^\%(' . a:pattern . '\m\).\?'
+  let pos = searchpos(pattern, a:flags)
+  if pos[0] == 0
+    return
+  endif
+  call cursor(pos[0], matchend(getline(pos[0]), pattern))
+endfunction
+
 " Set the variables of the session {name} of the UI {ui} in the buffer
 " {bufnr} (the current window).
 function! goda_term#ui#_init_variables(name, ui, bufnr, cwd) abort

@@ -5,8 +5,10 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 
+	"github.com/Shougo/goda-term.vim/ext/ui/shell"
 	"github.com/Shougo/goda-term.vim/ext/ui/terminal"
 	"github.com/Shougo/goda-term.vim/term"
 )
@@ -17,9 +19,25 @@ func main() {
 		prompt = `\f\+>`
 	}
 	b := term.New()
+	b.AddUI(shell.New())
 	b.AddUI(terminal.New())
+	var fgs, bgs []string
+	for i := range 16 {
+		fgs = append(fgs, fmt.Sprintf("TerminalFG%d", i))
+		bgs = append(bgs, fmt.Sprintf("TerminalBG%d", i))
+	}
 	b.PatchGlobal(term.Options{
 		UIParams: map[string]term.Params{
+			"shell": {
+				"aliases": map[string]string{"ls": "ls --color"},
+				"ansiColorHighlights": shell.ANSIColorHighlights{
+					Bgs: bgs, Fgs: fgs,
+					Bold: "Bold", Italic: "Italic", Underline: "Underlined",
+				},
+				"noSaveHistoryCommands": []string{"history"},
+				"userPrompt":            "'| ' .. fnamemodify(getcwd(), ':~') .. MyGitStatus()",
+				"shellHistoryPath":      "~/.cache/ddt-shell-history",
+			},
 			"terminal": {
 				"command":       []string{"zsh"},
 				"promptPattern": prompt,
