@@ -31,7 +31,11 @@ function! s:wait(cond, bufnr = bufnr('%')) abort
       call term_wait(a:bufnr, 20)
     endif
   endfor
-  call add(s:errors, 'timed out: ' . a:cond . ' ' . string(getbufvar(a:bufnr, '&buftype') ==# 'terminal' ? s:lines('') : getbufline(a:bufnr, 1, '$')))
+  let lines = getbufvar(a:bufnr, '&buftype') ==# 'terminal' ? s:lines('') : getbufline(a:bufnr, 1, '$')
+  " (Is the job of the terminal running?)
+  let job = has('nvim') ? getbufvar(a:bufnr, 'terminal_job_id', -1) : -1
+  let status = job > 0 ? ' job ' . job . ' ' . string(jobwait([job], 0)) : ''
+  call add(s:errors, 'timed out: ' . a:cond . ' ' . string(lines) . status)
   return v:false
 endfunction
 
@@ -63,13 +67,12 @@ endfunction
 
 function! s:terminal() abort
   if has('win32')
-    let [command, prompt] = [['cmd.exe'], '\f\+>']
+    let [command, prompt, extra] = [['cmd.exe'], '\f\+>', {}]
   else
-    let [command, prompt] = [['sh'], '% ']
+    let [command, prompt, extra] = [['sh'], '% ', #{env: #{PS1: '% '}}]
   endif
   call goda_term#custom#patch_global(#{uiParams: #{terminal: #{
-        \ command: command, promptPattern: prompt,
-        \ extraTermOptions: #{env: #{PS1: '% '}},
+        \ command: command, promptPattern: prompt, extraTermOptions: extra,
         \ }}})
   call goda_term#start(#{name: 'term', ui: 'terminal'})
   let s:buf = bufnr('%')
@@ -77,7 +80,7 @@ function! s:terminal() abort
   call s:check('variables', [b:goda_term_name, t:goda_term_ui_terminal_last_name,
         \ t:goda_term_ui_last_bufnr], ['term', 'term', s:buf])
   call s:check('sessions', goda_term#sessions(), ['term'])
-  call s:wait('!empty(s:lines(''^' . escape(prompt, '\') . '''))')
+  call s:wait('!empty(s:lines(' . string('^' . prompt) . '))')
 
   call goda_term#ui#do_action('send', #{str: 'echo hello'})
   call s:wait('len(s:lines(''^hello$'')) == 1')

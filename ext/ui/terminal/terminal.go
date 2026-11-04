@@ -195,7 +195,8 @@ func (t *instance) cd(ctx context.Context, h sdk.Host, dir string) error {
 	}
 	cmd := "\x15cd '" + dir + "'\r"
 	if runtime.GOOS == "windows" {
-		cmd = "cd \"" + dir + "\"\r"
+		// /d: on another drive too.
+		cmd = "cd /d \"" + dir + "\"\r"
 	}
 	if err := t.send(ctx, h, cmd); err != nil {
 		return err
