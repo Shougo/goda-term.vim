@@ -5,6 +5,11 @@
 " the UIs; this file starts it and passes on what is asked. The UIs have
 " their own Vim script (autoload/goda_term/ui/*.vim).
 
+" The version of this Vim script that the binary goes with (ScriptVersion of
+" its Go side): goda.vim refuses a binary of another one, and says to build
+" it again. Bumped with it when they no longer work together.
+let s:version = #{version: 1, module: 'github.com/Shougo/goda-term.vim'}
+
 " Patches of the options made at run time, as ddt#custom#patch_*(). They
 " live here, not in the binary: they survive a restart of it, and they can
 " be made before it is started. Every request carries them.
@@ -68,7 +73,7 @@ function! goda_term#build() abort
   if rename(tmp, bin) != 0
     throw 'goda-term: cannot replace ' . bin
   endif
-  call goda#register('term', function('s:start'))
+  call goda#register('term', function('s:start'), s:version)
   echomsg 'goda-term: built ' . bin
 endfunction
 
@@ -103,7 +108,7 @@ function! s:start() abort
   endif
 endfunction
 
-call goda#register('term', function('s:start'))
+call goda#register('term', function('s:start'), s:version)
 
 function! s:print_error(msg) abort
   echohl ErrorMsg

@@ -118,6 +118,10 @@ type brokenPlugin struct{ err error }
 
 func (brokenPlugin) Name() string { return PluginName }
 
+// ScriptVersion: a broken configuration says why, not that the binary is to
+// be built again.
+func (brokenPlugin) ScriptVersion() int { return ScriptVersion }
+
 func (p brokenPlugin) Handlers() map[string]sdk.Handler {
 	hs := map[string]sdk.Handler{}
 	for name := range (&Plugin{}).Handlers() {
@@ -144,6 +148,14 @@ type session struct {
 }
 
 func (p *Plugin) Name() string { return PluginName }
+
+// ScriptVersion is the version of the Vim script (autoload/goda_term.vim) this
+// binary goes with (sdk.ScriptVersioner): goda.vim refuses a binary of
+// another one and says to build it again. Bump it with s:version there when
+// the Vim script and the binary no longer work together.
+const ScriptVersion = 1
+
+func (p *Plugin) ScriptVersion() int { return ScriptVersion }
 
 func (p *Plugin) Handlers() map[string]sdk.Handler {
 	return map[string]sdk.Handler{
