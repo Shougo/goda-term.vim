@@ -1,0 +1,67 @@
+name: Diagnose the terminal job of Neovim
+
+# Issue #1: the terminal job exits at once in the headless Neovim of
+# MS-Windows. A terminal job of Neovim without goda-term (e2e/diag/term.vim)
+# for a few commands, headless and with a UI attached (e2e/diag/ui); the
+# results are in the summary of the run.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'e2e/diag/**'
+      - '.github/workflows/diag-nvim-term.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    name: ${{ matrix.os }} nvim ${{ matrix.nvim }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        nvim: [stable, nightly]
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Neovim
+        uses: rhysd/action-setup-vim@v1.6.1
+        with:
+          neovim: true
+          version: ${{ matrix.nvim }}
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+          cache-dependency-path: e2e/diag/ui/go.sum
+      - name: Build the UI
+        working-directory: e2e/diag/ui
+        run: go build -o "$RUNNER_TEMP/diagui" .
+      - name: Headless
+        working-directory: e2e/diag
+        env:
+          DIAG_OUT: ${{ runner.temp }}/diag.jsonl
+        run: |
+          nvim --version | head -n 1
+          timeout 120 nvim --headless --clean -n -S term.vim -c 'qall!' 2> "$RUNNER_TEMP/headless.err" \
+            || echo "exit status $?"
+          cat "$RUNNER_TEMP/headless.err"
+      - name: With a UI
+        working-directory: e2e/diag
+        env:
+          DIAG_OUT: ${{ runner.temp }}/diag.jsonl
+        run: |
+          bin=$(command -v nvim)
+          if [ "$RUNNER_OS" = Windows ]; then bin=$(cygpath -w "$bin"); fi
+          timeout 120 "$RUNNER_TEMP/diagui" "$bin" term.vim || echo "exit status $?"
+      - name: Summary
+        if: always()
+        run: |
+          py=$(command -v python3 || command -v python)
+          "$py" e2e/diag/summary.py "$RUNNER_TEMP/diag.jsonl" | tee -a "$GITHUB_STEP_SUMMARY"
