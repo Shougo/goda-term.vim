@@ -82,10 +82,9 @@ function! s:terminal() abort
   call s:check('variables', [b:goda_term_name, t:goda_term_ui_terminal_last_name,
         \ t:goda_term_ui_last_bufnr], ['term', 'term', s:buf])
   call s:check('sessions', goda_term#sessions(), ['term'])
-  " The job of a terminal of the headless Neovim of MS-Windows exits at
-  " once, without a word (jobwait() says -3): that of Neovim is tested on
-  " the other systems.
-  if !(has('nvim') && has('win32'))
+  " A terminal job of the headless Neovim of MS-Windows gets no output and
+  " exits at once (issue #1): the e2e test attaches a UI there.
+  if !(has('nvim') && has('win32') && empty(nvim_list_uis()))
     call s:wait('!empty(s:lines(' . string('^' . prompt) . '))')
 
     call goda_term#ui#do_action('send', #{str: 'echo hello'})
