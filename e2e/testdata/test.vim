@@ -69,7 +69,8 @@ endfunction
 
 function! s:terminal() abort
   if has('win32')
-    let [command, prompt, extra] = [['cmd.exe'], '\f\+>', {}]
+    " The drive first: 'isfname' of Neovim has no ":" there (\f).
+    let [command, prompt, extra] = [['cmd.exe'], '\a:\\[^>]*>', {}]
   else
     let [command, prompt, extra] = [['sh'], '% ', #{env: #{PS1: '% '}}]
   endif
