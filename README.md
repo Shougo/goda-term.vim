@@ -14,7 +14,7 @@ The UIs:
 
 ## Requirements
 
-- Vim 9.1 or Neovim 0.10
+- Vim 9.1 or Neovim 0.11
 - Go 1.26
 - [goda.vim](https://github.com/Shougo/goda.vim)
 

@@ -26,7 +26,7 @@ goda.vim.  There is no Deno.
 ==============================================================================
 INSTALL                                                     *goda-term-install*
 
-It needs Vim 9.1 or Neovim 0.10, Go 1.26 and goda.vim:
+It needs Vim 9.1 or Neovim 0.11, Go 1.26 and goda.vim:
 
 https://github.com/Shougo/goda.vim
 
