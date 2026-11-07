@@ -168,6 +168,9 @@ function! s:shell() abort
     call goda_term#ui#do_action('send', #{str: 'echo hello'})
     call s:wait('getline("$") ==# "% " && index(getline(1, "$"), "hello") >= 0')
     call s:check('history', readfile(history), ['echo hello'])
+    call goda_term#ui#do_action('send', #{str: 'echo secret', noSaveHistory: v:true})
+    call s:wait('getline("$") ==# "% " && index(getline(1, "$"), "secret") >= 0')
+    call s:check('noSaveHistory', readfile(history), ['echo hello'])
 
     " The colors of the output.
     " (The color is over bold, whose group has a color too.)

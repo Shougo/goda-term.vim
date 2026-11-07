@@ -68,6 +68,10 @@ type Params struct {
 	WinHeight any `json:"winHeight"`
 	WinRow    any `json:"winRow"`
 	WinWidth  any `json:"winWidth"`
+
+	// noSaveHistory: the command line is not written in the history (the
+	// send action with noSaveHistory).
+	noSaveHistory bool
 }
 
 // DefaultParams are those of ddt-ui-shell.
@@ -403,7 +407,7 @@ func (t *instance) execute(ctx context.Context, h sdk.Host, a term.Args, p Param
 		return false, t.newCommandLine(ctx, h, p, "")
 	}
 	cmd, args := cl.args[0], cl.args[1:]
-	if !slices.Contains(p.NoSaveHistoryCommands, cmd) {
+	if !p.noSaveHistory && !slices.Contains(p.NoSaveHistoryCommands, cmd) {
 		t.appendHistory(ctx, h, p, commandLine)
 	}
 	if b, ok := t.builtins()[cmd]; ok {
@@ -785,8 +789,10 @@ func (t *instance) Actions() map[string]term.Action {
 			}
 			return err
 		}),
-		// send {str}: executed.
+		// send {str}: executed (noSaveHistory: not written in the
+		// history).
 		"send": anywhere(func(ctx context.Context, h sdk.Host, a term.Args, p Params, ap term.Params) error {
+			p.noSaveHistory, _ = ap["noSaveHistory"].(bool)
 			if _, _, job := t.get(); job == nil {
 				if err := t.newCommandLine(ctx, h, p, str(ap, "str")); err != nil {
 					return err

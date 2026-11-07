@@ -259,7 +259,11 @@ previousPrompt	The cursor goes to the previous prompt.
 pushBufferStack	The command line is put aside: it comes back in the prompt
 		after the next command.
 redraw		Redraw the prompt.
-send		{str}: executed.
+send		{str}: executed.  With {noSaveHistory} (v:true), it is not
+		written in the history: >vim
+		call goda_term#ui#do_action('send',
+		      \ #{str: 'cat ' .. file, noSaveHistory: v:true})
+<
 setCommandLine	{str}: the command line of a new prompt.
 terminate	End the command running.
 
