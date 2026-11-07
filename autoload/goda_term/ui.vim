@@ -2,7 +2,24 @@
 " unless {name} is given.
 
 function! goda_term#ui#do_action(action, params = {}, name = get(b:, 'goda_term_name', '')) abort
+  call s:close_completion()
   call goda_term#ui_action(a:name, a:action, a:params)
+endfunction
+
+" The popup of a completion in insert mode closes before an action: what
+" the action writes later (the output of a command, from a callback) does
+" not close it in Vim, where it stays until a key.
+function! s:close_completion() abort
+  if mode() !~# '^i'
+    return
+  endif
+  if pumvisible()
+    " No text replaced: the completion starts at the cursor.
+    call complete(col('.'), [])
+  endif
+  if exists('*pum#visible') && pum#visible()
+    call pum#close()
+  endif
 endfunction
 
 function! goda_term#ui#get_input(name = get(b:, 'goda_term_name', '')) abort
