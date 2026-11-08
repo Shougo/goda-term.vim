@@ -1,5 +1,6 @@
-// Package e2e runs the UIs in a real Vim and Neovim: the scenario
-// testdata/test.vim, with the binary of testbin.
+// Package e2e runs goda-term.vim in a real Vim and Neovim, with the UI
+// terminal: the scenario testdata/test.vim, with the binary of testbin. It
+// is a module of its own: it requires the UI, which requires goda-term.vim.
 package e2e
 
 import (
@@ -58,22 +59,29 @@ func setupBinary(t *testing.T, pkg string) []string {
 	if out, err := exec.Command("go", "build", "-o", bin, pkg).CombinedOutput(); err != nil {
 		t.Fatalf("go build: %v\n%s", err, out)
 	}
-	// The Vim script of goda.vim: the module this module requires.
-	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "github.com/Shougo/goda.vim").Output()
-	if err != nil {
-		t.Fatalf("go list: %v", err)
-	}
-	godaDir := strings.TrimSpace(string(out))
 	root, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatal(err)
 	}
 	return append(os.Environ(),
-		"GODA_VIM_DIR="+godaDir,
+		// The Vim script of goda.vim and of the UI: the modules this module
+		// requires.
+		"GODA_VIM_DIR="+moduleDir(t, "github.com/Shougo/goda.vim"),
 		"GODA_TERM_DIR="+root,
+		"GODA_TERM_UI_DIR="+moduleDir(t, "github.com/Shougo/goda-term-ui-terminal.vim"),
 		"GODA_TERM_BINARY="+bin,
 		"GODA_TERM_RESULT="+filepath.Join(dir, "result"),
 	)
+}
+
+// moduleDir is the directory of the module path this module requires.
+func moduleDir(t *testing.T, path string) string {
+	t.Helper()
+	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", path).Output()
+	if err != nil {
+		t.Fatalf("go list %s: %v", path, err)
+	}
+	return strings.TrimSpace(string(out))
 }
 
 func run(t *testing.T, env []string, name string, args ...string) {
@@ -118,27 +126,5 @@ func TestVim(t *testing.T) {
 func TestNeovim(t *testing.T) {
 	nvim := editor(t, "GODA_NVIM", "nvim")
 	env := setup(t)
-	// A terminal job of the headless Neovim of MS-Windows gets no output
-	// (issue #1): a UI is attached there ($GODA_TERM_NVIM_UI elsewhere).
-	if runtime.GOOS == "windows" || os.Getenv("GODA_TERM_NVIM_UI") != "" {
-		run(t, env, uiAttach(t), nvim, script(t))
-		return
-	}
 	run(t, env, nvim, "--headless", "--clean", "-n", "-S", script(t))
-}
-
-// uiAttach builds the command uiattach (a module of its own: its
-// dependency is not that of goda-term).
-func uiAttach(t *testing.T) string {
-	t.Helper()
-	bin := filepath.Join(t.TempDir(), "uiattach")
-	if runtime.GOOS == "windows" {
-		bin += ".exe"
-	}
-	cmd := exec.Command("go", "build", "-o", bin, ".")
-	cmd.Dir = "uiattach"
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("go build uiattach: %v\n%s", err, out)
-	}
-	return bin
 }

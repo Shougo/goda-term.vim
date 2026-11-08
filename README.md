@@ -5,12 +5,13 @@ Terminals and shells in Vim and Neovim on
 [ddt.vim](https://github.com/Shougo/ddt.vim), with the configuration in Go
 instead of TypeScript, and no Deno.
 
-The UIs:
+The UIs are in repositories of their own:
 
-- `shell`: a buffer with a prompt; each command line runs in a pseudo
-  terminal, and its output (with its colors) is written in the buffer
-  (ddt-ui-shell).
-- `terminal`: a terminal job of Vim or Neovim (ddt-ui-terminal).
+- [goda-term-ui-shell.vim](https://github.com/Shougo/goda-term-ui-shell.vim):
+  a buffer with a prompt; each command line runs in a pseudo terminal, and
+  its output (with its colors) is written in the buffer (ddt-ui-shell).
+- [goda-term-ui-terminal.vim](https://github.com/Shougo/goda-term-ui-terminal.vim):
+  a terminal job of Vim or Neovim (ddt-ui-terminal).
 
 ## Requirements
 
@@ -20,7 +21,8 @@ The UIs:
 
 ## Usage
 
-The configuration is a Go module (see [examples/config](examples/config)) in
+The configuration is a Go module that adds the UIs you use (see
+[examples/config](examples/config)) in
 `~/.vim/goda-term` (Neovim: `stdpath('config') .. '/goda-term'`). Build it:
 
 ```vim
