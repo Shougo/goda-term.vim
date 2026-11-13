@@ -7,7 +7,7 @@ require (
 	github.com/Shougo/goda-term.vim v0.1.3-0.20261107042316-3e34a0add5f3
 )
 
-require github.com/Shougo/goda.vim v0.7.2 // indirect
+require github.com/Shougo/goda.vim v0.8.0 // indirect
 
 // This goda-term.vim.
 replace github.com/Shougo/goda-term.vim => ../

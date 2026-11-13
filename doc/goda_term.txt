@@ -91,6 +91,9 @@ FUNCTIONS                                                 *goda-term-functions*
 goda_term#build()                                           *goda_term#build()*
 		Build the configuration: "go mod tidy" and "go build".  The
 		binary runs from the next request.
+		NOTE: The binary is built by itself when it starts and there
+		is none, or it is of another version than the Vim script (see
+		"build" of |goda#register()|): not |g:goda_term#binary|.
 
 goda_term#start([{options}])                                *goda_term#start()*
 		Show the session of {options}: a new one, or the one of the
