@@ -21,9 +21,42 @@ The UIs are in repositories of their own:
 
 ## Usage
 
-The configuration is a Go module that adds the UIs you use (see
-[examples/config](examples/config)) in
-`~/.vim/goda-term` (Neovim: `stdpath('config') .. '/goda-term'`). Build it:
+The configuration is a Go module that adds the UIs you use, in
+`~/.vim/goda-term` (Neovim: `stdpath('config') .. '/goda-term'`); its
+`main.go`:
+
+```go
+package main
+
+import (
+	"github.com/Shougo/goda-term-ui-shell.vim/ext/ui/shell"
+	"github.com/Shougo/goda-term-ui-terminal.vim/ext/ui/terminal"
+	"github.com/Shougo/goda-term.vim/term"
+)
+
+func main() {
+	b := term.New()
+	b.AddUI(shell.New())
+	b.AddUI(terminal.New())
+	b.PatchGlobal(term.Options{
+		UIParams: map[string]term.Params{
+			"terminal": {"command": []string{"zsh"}},
+		},
+	})
+	b.Main()
+}
+```
+
+```sh
+go mod init goda-term-config
+go get github.com/Shougo/goda-term.vim@latest
+go get github.com/Shougo/goda-term-ui-shell.vim@latest
+go get github.com/Shougo/goda-term-ui-terminal.vim@latest
+go mod tidy
+```
+
+(A whole one: [the author's](https://github.com/Shougo/shougo-s-github/tree/master/vim/rc/goda-term).)
+Build it:
 
 ```vim
 call goda_term#build()

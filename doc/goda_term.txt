@@ -33,8 +33,7 @@ https://github.com/Shougo/goda.vim
 CONFIGURATION                                         *goda-term-configuration*
 
 The configuration is a Go module in |g:goda_term#config_dir|: a main.go that
-adds the UIs (|goda-term-uis|) and patches the options (examples/config has
-one):
+adds the UIs (|goda-term-uis|) and patches the options:
 >go
 	import (
 		"github.com/Shougo/goda-term-ui-terminal.vim/ext/ui/terminal"
@@ -50,6 +49,9 @@ one):
 	})
 	b.Main()
 <
+A whole one is the author's:
+https://github.com/Shougo/shougo-s-github/tree/master/vim/rc/goda-term
+
 Build it with |goda_term#build()|.
 
 g:goda_term#config_dir                                 *g:goda_term#config_dir*
