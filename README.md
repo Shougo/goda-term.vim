@@ -77,3 +77,32 @@ The sources `term_tab` and `term_shell_history` of
 
 See `:help goda-term` for everything else, and `:help goda-term-ddt` for
 the differences from ddt.vim.
+
+## With goda-pm.vim
+
+With [goda-pm.vim](https://github.com/Shougo/goda-pm.vim), the build uses
+the plugins installed (`g:goda#workspace` of goda.vim): after an update,
+build again, with no `go get -u`. To build after every update:
+
+```toml
+[[plugins]]
+repo = 'Shougo/goda.vim'
+
+[[plugins]]
+repo = 'Shougo/goda-term.vim'
+depends = 'goda.vim'
+lazy = true
+hook_post_update = 'call goda_term#build()'
+
+[[plugins]]
+repo = 'Shougo/goda-term-ui-shell.vim'
+depends = 'goda-term.vim'
+lazy = true
+hook_post_update = 'call goda_term#build()'
+
+[[plugins]]
+repo = 'Shougo/goda-term-ui-terminal.vim'
+depends = 'goda-term.vim'
+lazy = true
+hook_post_update = 'call goda_term#build()'
+```
