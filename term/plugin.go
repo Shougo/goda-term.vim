@@ -20,6 +20,7 @@ import (
 
 	"github.com/Shougo/goda.vim/host"
 	"github.com/Shougo/goda.vim/sdk"
+	"github.com/Shougo/goda.vim/sdk/custom"
 )
 
 // PluginName is the name of the plugin: goda#request('term', ...).
@@ -28,14 +29,13 @@ const PluginName = "term"
 // Builder collects the UIs and the configuration.
 type Builder struct {
 	uis    map[string]UI
-	global Options
-	local  map[string]Options
+	custom *custom.Patches[Options]
 	errs   []string
 }
 
 // New returns an empty Builder.
 func New() *Builder {
-	return &Builder{uis: map[string]UI{}, local: map[string]Options{}}
+	return &Builder{uis: map[string]UI{}, custom: newCustom()}
 }
 
 // AddUI adds a UI under its Name.
@@ -49,32 +49,18 @@ func (b *Builder) AddUI(u UI) *Builder {
 
 // PatchGlobal patches the options of every session.
 func (b *Builder) PatchGlobal(o Options) *Builder {
-	b.global = b.patch(b.global, o)
+	if err := b.custom.PatchGlobal(o); err != nil {
+		b.errs = append(b.errs, err.Error())
+	}
 	return b
 }
 
 // PatchLocal patches the options of the session name.
 func (b *Builder) PatchLocal(name string, o Options) *Builder {
-	b.local[name] = b.patch(b.local[name], o)
-	return b
-}
-
-func (b *Builder) patch(dst, src Options) Options {
-	d, err := toMap(dst)
-	if err == nil {
-		var s optionMap
-		if s, err = toMap(src); err == nil {
-			var o Options
-			if o, err = fromMap(merge(d, s)); err == nil {
-				if dst.Name == "" && src.Name == "" {
-					o.Name = ""
-				}
-				return o
-			}
-		}
+	if err := b.custom.PatchLocal(name, o); err != nil {
+		b.errs = append(b.errs, err.Error())
 	}
-	b.errs = append(b.errs, err.Error())
-	return dst
+	return b
 }
 
 // Plugin is the plugin of the configuration, or the errors in it.
@@ -82,18 +68,7 @@ func (b *Builder) Plugin() (*Plugin, error) {
 	if len(b.errs) > 0 {
 		return nil, fmt.Errorf("goda-term: %s", strings.Join(b.errs, "; "))
 	}
-	p := &Plugin{uis: b.uis, sessions: map[string]*session{}}
-	var err error
-	if p.global, err = toMap(b.global); err != nil {
-		return nil, err
-	}
-	p.local = map[string]optionMap{}
-	for name, o := range b.local {
-		if p.local[name], err = toMap(o); err != nil {
-			return nil, err
-		}
-	}
-	return p, nil
+	return &Plugin{uis: b.uis, custom: b.custom, sessions: map[string]*session{}}, nil
 }
 
 // Main serves the plugin, with the other plugins given, as the whole
@@ -134,8 +109,7 @@ func (p brokenPlugin) Handlers() map[string]sdk.Handler {
 // Plugin serves the sessions.
 type Plugin struct {
 	uis    map[string]UI
-	global optionMap
-	local  map[string]optionMap
+	custom *custom.Patches[Options]
 
 	mu       sync.Mutex
 	sessions map[string]*session
@@ -169,29 +143,12 @@ func (p *Plugin) Handlers() map[string]sdk.Handler {
 }
 
 // patches are those of goda_term#custom#*(), which every request carries.
-type patches struct {
-	Global optionMap            `json:"global"`
-	Local  map[string]optionMap `json:"local"`
-}
+type patches = custom.Request
 
 // resolve is the options of a start with the options given.
 func (p *Plugin) resolve(user optionMap, pt patches) (Options, error) {
-	name, _ := user["name"].(string)
-	if name == "" {
-		name, _ = pt.Global["name"].(string)
-	}
-	if name == "" {
-		name, _ = p.global["name"].(string)
-	}
-	if name == "" {
-		name = "default"
-	}
-	m := merge(p.global, p.local[name])
-	m = merge(m, pt.Global)
-	m = merge(m, pt.Local[name])
-	m = merge(m, user)
-	m["name"] = name
-	return fromMap(m)
+	o, _, err := p.custom.Resolve(user, pt)
+	return o, err
 }
 
 // start(options, context, patches) shows the session of the options.
@@ -318,11 +275,11 @@ func (p *Plugin) options(_ context.Context, _ sdk.Host, params []any) (any, erro
 		return nil, err
 	}
 	if _, args, err := p.session(name); err == nil {
-		return toMap(args.Options)
+		return custom.ToMap(args.Options)
 	}
 	o, err := p.resolve(optionMap{"name": name}, pt)
 	if err != nil {
 		return nil, err
 	}
-	return toMap(o)
+	return custom.ToMap(o)
 }
