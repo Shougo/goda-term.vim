@@ -19,85 +19,18 @@ let s:local_patch = {}
 " ---------------------------------------------------------------------------
 " Setup
 
-" The binary is machine specific, so it is not built into the configuration
-" directory (which belongs in your dotfiles) but into a cache directory.
-function! s:cache_dir() abort
-  if has('nvim')
-    let base = stdpath('cache')
-  elseif !empty($XDG_CACHE_HOME)
-    let base = $XDG_CACHE_HOME . '/vim'
-  elseif has('win32') && !empty($LOCALAPPDATA)
-    let base = $LOCALAPPDATA . '/vim'
-  else
-    let base = expand('~/.cache/vim', 1)
-  endif
-  return base . '/goda-term'
-endfunction
-
-function! s:default_bin() abort
-  if exists('g:goda_term#binary')
-    " (Not 'wildignore': '*.exe' in it on Windows made it "".)
-    return expand(g:goda_term#binary, 1)
-  endif
-  return s:cache_dir() . '/goda-term' . (has('win32') ? '.exe' : '')
-endfunction
-
-" The options of goda#register(): the version of the Vim script, and how to
-" build the binary when there is none or it is of another version (goda.vim
-" builds it then). Not for the binary of g:goda_term#binary: the user builds it.
-function! s:register_opts() abort
-  if exists('g:goda_term#binary')
-    return s:version
-  endif
-  return extend(#{build: function('s:build_binary'), bin: s:default_bin()}, s:version)
-endfunction
-
-" The build of the binary for goda.vim, as it starts it (nothing else: it
-" is not running).
-function! s:build_binary() abort
-  call goda#build(#{name: 'term', dir: s:config_dir(), bin: s:default_bin()})
-endfunction
-
-function! s:config_dir() abort
-  if exists('g:goda_term#config_dir')
-    return expand(g:goda_term#config_dir, 1)
-  endif
-  return (has('nvim') ? stdpath('config') : expand('~/.vim', 1)) . '/goda-term'
-endfunction
+let s:goda = goda#configured#new('term', s:version)
 
 " Build the user's configuration (a Go module in g:goda_term#config_dir) with
 " goda#build(): with the plugins installed (g:goda#workspace). The running
 " binary is stopped, and the new one starts with the next request. When the
 " build fails, the previous binary keeps running.
 function! goda_term#build() abort
-  call goda#build(#{name: 'term', dir: s:config_dir(), bin: s:default_bin()})
-  call goda#register('term', function('s:start'), s:register_opts())
+  call s:goda.build()
+  call s:goda.register()
 endfunction
 
-" Start the binary: goda.vim calls it when a request needs the plugin "term"
-" and no binary serves it.
-function! s:start() abort
-  let bin = s:default_bin()
-  if !executable(bin)
-    throw 'goda-term: ' . bin . ' does not exist yet; build it with: call goda_term#build()'
-  endif
-  let plugins = goda#start(bin)
-  if index(plugins, 'term') < 0
-    if !empty(plugins)
-      call goda#stop(plugins[0])
-    endif
-    throw 'goda-term: ' . bin . ' does not contain the "term" plugin'
-  endif
-  " A binary built from an invalid configuration starts anyway and says why.
-  let status = goda#request('term', 'status')
-  if type(status) == v:t_string && status !=# ''
-    call goda#stop('term')
-    throw 'goda-term: fix the configuration in ' . s:config_dir()
-          \ . ' and run goda_term#build(): ' . status
-  endif
-endfunction
-
-call goda#register('term', function('s:start'), s:register_opts())
+call s:goda.register()
 
 function! s:print_error(msg) abort
   echohl ErrorMsg
