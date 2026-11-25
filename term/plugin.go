@@ -127,7 +127,7 @@ func (p *Plugin) Name() string { return PluginName }
 // binary goes with (sdk.ScriptVersioner): goda.vim refuses a binary of
 // another one and says to build it again. Bump it with s:version there when
 // the Vim script and the binary no longer work together.
-const ScriptVersion = 1
+const ScriptVersion = 2
 
 func (p *Plugin) ScriptVersion() int { return ScriptVersion }
 
@@ -142,24 +142,20 @@ func (p *Plugin) Handlers() map[string]sdk.Handler {
 	}
 }
 
-// patches are those of goda_term#custom#*(), which every request carries.
-type patches = custom.Request
-
 // resolve is the options of a start with the options given.
-func (p *Plugin) resolve(user optionMap, pt patches) (Options, error) {
-	o, _, err := p.custom.Resolve(user, pt)
+func (p *Plugin) resolve(user optionMap) (Options, error) {
+	o, _, err := p.custom.Resolve(user, custom.Request{})
 	return o, err
 }
 
-// start(options, context, patches) shows the session of the options.
+// start(options, context) shows the session of the options.
 func (p *Plugin) start(ctx context.Context, h sdk.Host, params []any) (any, error) {
 	var user optionMap
 	var c Context
-	var pt patches
-	if err := sdk.DecodeArgs(params, &user, sdk.Optional(&c), sdk.Optional(&pt)); err != nil {
+	if err := sdk.DecodeArgs(params, &user, sdk.Optional(&c)); err != nil {
 		return nil, err
 	}
-	o, err := p.resolve(user, pt)
+	o, err := p.resolve(user)
 	if err != nil {
 		return nil, err
 	}
@@ -266,18 +262,17 @@ func (p *Plugin) sessionNames(context.Context, sdk.Host, []any) (any, error) {
 	return names, nil
 }
 
-// options(name, patches) are the options a start of name would have,
-// without those of the start (goda_term#custom#get_current()).
+// options(name) are the options of the session name, or those a start of
+// name would have, without options of its own (goda_term#get_current()).
 func (p *Plugin) options(_ context.Context, _ sdk.Host, params []any) (any, error) {
 	var name string
-	var pt patches
-	if err := sdk.DecodeArgs(params, &name, sdk.Optional(&pt)); err != nil {
+	if err := sdk.DecodeArgs(params, &name); err != nil {
 		return nil, err
 	}
 	if _, args, err := p.session(name); err == nil {
 		return custom.ToMap(args.Options)
 	}
-	o, err := p.resolve(optionMap{"name": name}, pt)
+	o, err := p.resolve(optionMap{"name": name})
 	if err != nil {
 		return nil, err
 	}

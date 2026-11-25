@@ -93,8 +93,7 @@ g:goda_term#binary                                         *g:goda_term#binary*
 ==============================================================================
 OPTIONS                                                     *goda-term-options*
 
-Those of main.go (term.Options; Builder.PatchGlobal() and PatchLocal()),
-of |goda_term#custom#patch_global()| and |goda_term#custom#patch_local()|,
+Those of main.go (term.Options; Builder.PatchGlobal() and PatchLocal())
 and of |goda_term#start()|, merged in that order.  The params of a UI are
 merged param by param.
 
@@ -135,6 +134,11 @@ goda_term#get_input({name})                             *goda_term#get_input()*
 goda_term#sessions()                                     *goda_term#sessions()*
 		The names of the sessions.
 
+goda_term#get_current([{name}])                       *goda_term#get_current()*
+		The options of the session {name} (default: that of the
+		current buffer): those it was started with, or those a start
+		of it would have.
+
 goda_term#ui#do_action({action} [, {params} [, {name}]])
                                                      *goda_term#ui#do_action()*
 		|goda_term#ui_action()| of the session of the current buffer
@@ -148,22 +152,6 @@ goda_term#ui#kill_editor()                         *goda_term#ui#kill_editor()*
 		go back to the window of the last UI: for the editor that
 		$EDITOR started in a session ("git commit", say).
 		NOTE: Unsaved changes in the buffer are lost.
-
-goda_term#custom#patch_global({dict})        *goda_term#custom#patch_global()*
-goda_term#custom#patch_global({key}, {value})
-goda_term#custom#patch_local({name}, {dict})  *goda_term#custom#patch_local()*
-goda_term#custom#patch_local({name}, {key}, {value})
-goda_term#custom#set_global({dict})            *goda_term#custom#set_global()*
-goda_term#custom#set_local({name}, {dict})      *goda_term#custom#set_local()*
-		Patch (or set) the options at run time.
-
-goda_term#custom#get_global()                  *goda_term#custom#get_global()*
-goda_term#custom#get_local()                    *goda_term#custom#get_local()*
-		Those patches.
-
-goda_term#custom#get_current([{name}])        *goda_term#custom#get_current()*
-		The options of the session {name} (default: that of the
-		current buffer).
 
 ==============================================================================
 VARIABLES                                                 *goda-term-variables*
@@ -273,7 +261,9 @@ For example:
 DIFFERENCES FROM DDT                                            *goda-term-ddt*
 
 - The configuration is Go (main.go), not ddt.ts: ddt#custom#load_config()
-  is |goda_term#build()|.
+  is |goda_term#build()|. The options are patched there (Builder.PatchGlobal,
+  PatchLocal) or given to |goda_term#start()|, not in Vim script
+  (ddt#custom#patch_global()).
 - ddt#... is goda_term#... (ddt#start() is |goda_term#start()|, ...).
 - The variables are b:goda_term_name, t:goda_term_ui_..._last_name, ...
   (|goda-term-variables|), and the 'filetype' of the UIs are

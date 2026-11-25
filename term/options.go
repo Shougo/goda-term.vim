@@ -3,8 +3,7 @@ package term
 import "github.com/Shougo/goda.vim/sdk/custom"
 
 // Options are those of ddt.vim: of the configuration (Builder.PatchGlobal,
-// PatchLocal), of goda_term#custom#patch_global() and patch_local(), and of
-// goda_term#start(), merged in that order. A UI's params are merged param by
+// PatchLocal) and of goda_term#start(), merged in that order. A UI's params are merged param by
 // param (a map of a param, aliases say, is replaced whole).
 type Options struct {
 	// Name is the session: a start with the name of another shows it again.

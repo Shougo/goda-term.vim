@@ -43,8 +43,8 @@ func TestResolve(t *testing.T) {
 		t.Fatal(err)
 	}
 	o, err := p.resolve(optionMap{"name": "x", "uiParams": map[string]any{
-		"shell": map[string]any{"aliases": map[string]any{"ll": "ls -l"}},
-	}}, patches{Global: optionMap{"uiParams": map[string]any{"shell": map[string]any{"prompt": "$"}}}})
+		"shell": map[string]any{"prompt": "$", "aliases": map[string]any{"ll": "ls -l"}},
+	}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestResolve(t *testing.T) {
 		t.Errorf("%+v", o)
 	}
 	// The default name.
-	if o, _ := p.resolve(nil, patches{}); o.Name != "default" {
+	if o, _ := p.resolve(nil); o.Name != "default" {
 		t.Errorf("name %q", o.Name)
 	}
 }
