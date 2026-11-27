@@ -2,7 +2,9 @@ package term
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/Shougo/goda.vim/sdk"
@@ -31,6 +33,17 @@ func (fakeHost) Call(context.Context, string, ...any) (any, error) { return nil,
 func (fakeHost) Notify(context.Context, string, ...any) error      { return nil }
 func (fakeHost) Eval(context.Context, string) (any, error)         { return nil, nil }
 func (fakeHost) Cmd(context.Context, string) error                 { return nil }
+
+// recordHost records the calls (function and first argument).
+type recordHost struct {
+	fakeHost
+	calls []string
+}
+
+func (r *recordHost) Call(_ context.Context, fn string, args ...any) (any, error) {
+	r.calls = append(r.calls, fmt.Sprint(fn, " ", args[0]))
+	return nil, nil
+}
 
 func TestResolve(t *testing.T) {
 	b := New().AddUI(fakeUI{"shell"})
@@ -88,6 +101,14 @@ func TestSessions(t *testing.T) {
 	}
 	if v, _ := h["getInput"](ctx, fakeHost{}, []any{"b"}); v != "" {
 		t.Errorf("no session: %v", v)
+	}
+	// A gone session (the binary was restarted): its buffers forget it.
+	rec := &recordHost{}
+	if _, err := h["uiAction"](ctx, rec, []any{"b", "act", nil}); err != nil {
+		t.Errorf("a gone session: %v", err)
+	}
+	if want := []string{"goda_term#ui#_forget b"}; !slices.Equal(rec.calls, want) {
+		t.Errorf("calls %q, want %q", rec.calls, want)
 	}
 	// Twice the same UI is an error of the configuration.
 	if _, err := New().AddUI(fakeUI{"shell"}).AddUI(fakeUI{"shell"}).Plugin(); err == nil {

@@ -100,6 +100,18 @@ function! goda_term#ui#_search_prompt(pattern, flags) abort
   call cursor(pos[0], matchend(getline(pos[0]), pattern))
 endfunction
 
+" The session {name} is gone (the binary was restarted): its buffers forget
+" it.
+function! goda_term#ui#_forget(name) abort
+  for info in getbufinfo()
+    if info.variables->get('goda_term_name', '') ==# a:name
+      call setbufvar(info.bufnr, 'goda_term_name', '')
+    endif
+  endfor
+  echomsg printf('goda-term: the session %s is gone: start it again',
+        \ string(a:name))
+endfunction
+
 " Set the variables of the session {name} of the UI {ui} in the buffer
 " {bufnr} (the current window).
 function! goda_term#ui#_init_variables(name, ui, bufnr, cwd) abort

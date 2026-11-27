@@ -210,6 +210,9 @@ func (p *Plugin) uiAction(ctx context.Context, h sdk.Host, params []any) (any, e
 	}
 	s, args, err := p.session(name)
 	if err != nil {
+		// The session is gone (the binary was restarted: goda_term#build()):
+		// its buffers forget it, and their actions do nothing more.
+		_, err := h.Call(ctx, "goda_term#ui#_forget", name)
 		return nil, err
 	}
 	act, ok := s.instance.Actions()[action]
