@@ -3,7 +3,7 @@
 Author: Shougo <Shougo.Matsu at gmail.com>
 License: MIT license
 
-CONTENTS                                                   *goda-term-contents*
+CONTENTS                                                  *goda-term-contents*
 
 Introduction		|goda-term-introduction|
 Install			|goda-term-install|
@@ -16,21 +16,21 @@ Goda-fi sources		|goda-term-goda-fi|
 Differences from ddt	|goda-term-ddt|
 
 ==============================================================================
-INTRODUCTION                                           *goda-term-introduction*
+INTRODUCTION                                          *goda-term-introduction*
 
 goda-term.vim is the successor of ddt.vim on goda.vim: the UIs are Go, in a
 binary built from your configuration (main.go), and Vim talks to it through
 goda.vim.  There is no Deno.
 
 ==============================================================================
-INSTALL                                                     *goda-term-install*
+INSTALL                                                    *goda-term-install*
 
 It needs Vim 9.1 or Neovim 0.11, Go 1.26 and goda.vim:
 
 https://github.com/Shougo/goda.vim
 
 ==============================================================================
-CONFIGURATION                                         *goda-term-configuration*
+CONFIGURATION                                        *goda-term-configuration*
 
 The configuration is a Go module in |g:goda_term#config_dir|: a main.go that
 adds the UIs (|goda-term-uis|) and patches the options:
@@ -79,19 +79,19 @@ after every update:
 	hook_post_update = 'call goda_term#build()'
 <
 
-g:goda_term#config_dir                                 *g:goda_term#config_dir*
+g:goda_term#config_dir                                *g:goda_term#config_dir*
 		The configuration module.
 		Default: "~/.vim/goda-term", Neovim: stdpath('config') .
 		'/goda-term'
 
-g:goda_term#binary                                         *g:goda_term#binary*
+g:goda_term#binary                                        *g:goda_term#binary*
 		The binary built from it.
 		Default: "goda-term" in the "goda-term" directory of the cache
 		directory (Neovim: stdpath('cache'); Vim: $XDG_CACHE_HOME/vim
 		or ~/.cache/vim, %LOCALAPPDATA%/vim on MS-Windows).
 
 ==============================================================================
-OPTIONS                                                     *goda-term-options*
+OPTIONS                                                    *goda-term-options*
 
 Those of main.go (term.Options; Builder.PatchGlobal() and PatchLocal())
 and of |goda_term#start()|, merged in that order.  The params of a UI are
@@ -108,75 +108,72 @@ ui			(string)
 uiParams		(dict)
 		The params of each UI, by its name.
 
-nvimServer		(string)
-		Not used yet (as in ddt.vim).
-
 ==============================================================================
-FUNCTIONS                                                 *goda-term-functions*
+FUNCTIONS                                                *goda-term-functions*
 
-goda_term#build()                                           *goda_term#build()*
+goda_term#build()                                          *goda_term#build()*
 		Build the configuration: "go mod tidy" and "go build".  The
 		binary runs from the next request.
 		NOTE: The binary is built by itself when it starts and there
 		is none, or it is of another version than the Vim script (see
 		"build" of |goda#register()|): not |g:goda_term#binary|.
 
-goda_term#start([{options}])                                *goda_term#start()*
+goda_term#start([{options}])                               *goda_term#start()*
 		Show the session of {options}: a new one, or the one of the
 		name again.
 
-goda_term#ui_action({name}, {action} [, {params}])      *goda_term#ui_action()*
+goda_term#ui_action({name}, {action} [, {params}])     *goda_term#ui_action()*
 		Run the UI action {action} of the session {name}.
 
-goda_term#get_input({name})                             *goda_term#get_input()*
+goda_term#get_input({name})                            *goda_term#get_input()*
 		The command line being typed in the session {name}.
 
-goda_term#sessions()                                     *goda_term#sessions()*
+goda_term#sessions()                                    *goda_term#sessions()*
 		The names of the sessions.
 
-goda_term#get_current([{name}])                       *goda_term#get_current()*
+goda_term#get_current([{name}])                      *goda_term#get_current()*
 		The options of the session {name} (default: that of the
 		current buffer): those it was started with, or those a start
 		of it would have.
 
 goda_term#ui#do_action({action} [, {params} [, {name}]])
-                                                     *goda_term#ui#do_action()*
+                                                    *goda_term#ui#do_action()*
 		|goda_term#ui_action()| of the session of the current buffer
 		(or {name}).
 
-goda_term#ui#get_input([{name}])                     *goda_term#ui#get_input()*
+goda_term#ui#get_input([{name}])                    *goda_term#ui#get_input()*
 		|goda_term#get_input()| of the session of the current buffer.
 
-goda_term#ui#kill_editor()                         *goda_term#ui#kill_editor()*
+goda_term#ui#kill_editor()                        *goda_term#ui#kill_editor()*
 		Delete the current buffer forcibly, close the current tab, and
 		go back to the window of the last UI: for the editor that
 		$EDITOR started in a session ("git commit", say).
 		NOTE: Unsaved changes in the buffer are lost.
 
 ==============================================================================
-VARIABLES                                                 *goda-term-variables*
+VARIABLES                                                *goda-term-variables*
 
-b:goda_term_name                                             *b:goda_term_name*
+b:goda_term_name                                            *b:goda_term_name*
 		The session of the buffer of a UI.
 
-t:goda_term_name                                             *t:goda_term_name*
+t:goda_term_name                                            *t:goda_term_name*
 		The last session shown in the tab page.
 
-t:goda_term_ui_{ui}_last_name                   *t:goda_term_ui_{ui}_last_name*
+t:goda_term_ui_{ui}_last_name                  *t:goda_term_ui_{ui}_last_name*
 		The last session of the UI {ui} ("terminal", ...) shown in
 		the tab page.
 
-t:goda_term_ui_last_bufnr                         *t:goda_term_ui_last_bufnr*
+t:goda_term_ui_last_bufnr                          *t:goda_term_ui_last_bufnr*
 		The buffer of the last UI shown in the tab page.
 
-t:goda_term_ui_last_directory                 *t:goda_term_ui_last_directory*
+t:goda_term_ui_last_directory                  *t:goda_term_ui_last_directory*
 		The directory of the last UI shown in the tab page.
 
-g:goda_term_ui_last_winid                         *g:goda_term_ui_last_winid*
+g:goda_term_ui_last_winid                          *g:goda_term_ui_last_winid*
 		The window of the last UI shown or acted on.
 
 ==============================================================================
-UIS                                                             *goda-term-uis*
+UIS                                                            *goda-term-uis*
 
 The UIs are in repositories of their own: install those you use, and add
 them in the configuration (|goda-term-configuration|).
@@ -193,7 +190,7 @@ terminal	A terminal job of Vim or Neovim (ddt-ui-terminal).
 		import ".../goda-term-ui-terminal.vim/ext/ui/terminal"
 
 ==============================================================================
-GODA-FI SOURCES                                             *goda-term-goda-fi*
+GODA-FI SOURCES                                            *goda-term-goda-fi*
 
 The packages .../ext/fi/termtab and .../ext/fi/shellhistory are sources of
 goda-fi.vim (https://github.com/Shougo/goda-fi.vim), as the ddu sources of
@@ -218,7 +215,7 @@ ddt.vim; add them in the configuration of goda-fi.vim:
 		},
 	})
 <
-term_tab                                         *goda-term-goda-fi-term_tab*
+term_tab                                          *goda-term-goda-fi-term_tab*
 		The tab pages, with the directory of their last UI
 		(|t:goda_term_ui_last_directory|).  The kind term_tab has the
 		actions:
@@ -228,7 +225,7 @@ term_tab                                         *goda-term-goda-fi-term_tab*
 		new	A new tab page, in a directory asked for.
 		switch	Go to the tab page.
 
-term_shell_history                     *goda-term-goda-fi-term_shell_history*
+term_shell_history                      *goda-term-goda-fi-term_shell_history*
 		The command lines of history files, the newest first.  The
 		actions are for the session of the current buffer:
 
@@ -258,7 +255,7 @@ For example:
 	      \ })<CR>
 <
 ==============================================================================
-DIFFERENCES FROM DDT                                            *goda-term-ddt*
+DIFFERENCES FROM DDT                                           *goda-term-ddt*
 
 - The configuration is Go (main.go), not ddt.ts: ddt#custom#load_config()
   is |goda_term#build()|. The options are patched there (Builder.PatchGlobal,

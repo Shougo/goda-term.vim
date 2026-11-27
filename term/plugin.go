@@ -181,7 +181,7 @@ func (p *Plugin) start(ctx context.Context, h sdk.Host, params []any) (any, erro
 	}
 	// $EDITOR first: the job of a terminal has the environment of its
 	// start ("git commit" in it edits in this Vim), as in ddt.vim.
-	if _, err := h.Call(ctx, "goda_term#ui#_set_editor", o.NvimServer); err != nil {
+	if _, err := h.Call(ctx, "goda_term#ui#_set_editor"); err != nil {
 		return nil, err
 	}
 	if err := s.instance.Redraw(ctx, h, args); err != nil {

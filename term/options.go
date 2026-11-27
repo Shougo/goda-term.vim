@@ -13,9 +13,6 @@ type Options struct {
 	UI string `json:"ui,omitempty"`
 	// UIParams are the params of each UI, by its name.
 	UIParams map[string]Params `json:"uiParams,omitempty"`
-	// NvimServer is the server of Neovim for $EDITOR (not used yet, as in
-	// ddt.vim).
-	NvimServer string `json:"nvimServer,omitempty"`
 	// Debug is for the UIs.
 	Debug bool `json:"debug,omitempty"`
 }
