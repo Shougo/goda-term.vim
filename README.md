@@ -13,6 +13,9 @@ The UIs are in repositories of their own:
 - [goda-term-ui-terminal.vim](https://github.com/Shougo/goda-term-ui-terminal.vim):
   a terminal job of Vim or Neovim (ddt-ui-terminal).
 
+Before 1.0.0, a change that breaks extensions or configurations is made only
+in a minor version and said in its release.
+
 ## Requirements
 
 - Vim 9.1 or Neovim 0.11
