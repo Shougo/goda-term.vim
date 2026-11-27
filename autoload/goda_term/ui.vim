@@ -132,16 +132,12 @@ endfunction
 
 " Before a start: $EDITOR (and $GIT_EDITOR) for the jobs of the sessions,
 " to edit in this Vim.
-function! goda_term#ui#_set_editor(nvim_server) abort
+function! goda_term#ui#_set_editor() abort
   let editor = ''
-  if exists('g:loaded_guise')
-    " vim-guise sets $EDITOR itself.
-  elseif v:progname ==# 'nvim' && executable('nvr') && v:servername !=# ''
-    " neovim-remote (Neovim has no --remote-tab-wait-silent yet). The
-    " editor starts in Normal mode: Insert mode of the session would go on
-    " in it ("-cc": before the file, as "-c" waits for it to be closed).
-    let editor = printf('nvr --servername=%s -cc stopinsert --remote-tab-wait-silent',
-          \ v:servername)
+  if v:progname ==# 'nvim' && has('nvim-0.13') && v:servername !=# ''
+    " --remote waits until the file is closed.
+    let editor = printf('%s --server %s --remote-tab-silent',
+          \ v:progpath, v:servername)
   elseif executable(v:progpath) && has('clientserver') && v:servername !=# ''
     " (Vim leaves Insert mode itself: CTRL-\ CTRL-N first.)
     let editor = printf('%s --servername=%s --remote-tab-wait-silent',

@@ -108,9 +108,6 @@ ui			(string)
 uiParams		(dict)
 		The params of each UI, by its name.
 
-nvimServer		(string)
-		Not used yet (as in ddt.vim).
-
 ==============================================================================
 FUNCTIONS                                                 *goda-term-functions*
 
